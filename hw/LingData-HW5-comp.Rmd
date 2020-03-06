@@ -21,14 +21,19 @@ The dataset is available [https://raw.githubusercontent.com/agricolamz/2018-MAG_
 ### 1.0 
 Read the data from file to the variable `shva`.
 ```{r 1.0}
-
+shva <- read_tsv('https://raw.githubusercontent.com/agricolamz/2018-MAG_R_course/master/data/duryagin_ReductionRussian.txt')
+shva
 ```
 
 ### 1.1 
 Scatterplot `f1` and `f2` using `ggplot()`. 
 Design it to look like the [following](https://raw.githubusercontent.com/agricolamz/2018-MAG_R_course/master/img/duryagin1.png).
 ```{r 1.1}
-
+shva %>%
+  ggplot(aes(f2, f1, colour = vowel)) +
+  geom_point() +
+  scale_x_reverse() +
+  scale_y_reverse()
 ```
 
 ### 1.2 
@@ -36,20 +41,34 @@ Plot the boxplots of `f1` and `f2` for each vowel using `ggplot()`.
 Design it to look like [this](https://raw.githubusercontent.com/agricolamz/2018-MAG_R_course/master/img/duryagin2.png) and [this](https://raw.githubusercontent.com/agricolamz/2018-MAG_R_course/master/img/duryagin3.png).
 ```{r 1.2}
 # f1 boxplot
+shva %>%
+  ggplot(aes(vowel, f1)) +
+  coord_flip() +
+  geom_boxplot(aes(fill=vowel))
 
 # f2 boxplot
+shva %>%
+  ggplot(aes(vowel, f2)) +
+  coord_flip() +
+  geom_boxplot(aes(fill=vowel))
+
 ```
 
 ### 1.3 
 Calculate Pearson's correlation of `f1` and `f2` (all data)
 ```{r 1.3}
-
+cor.test(shva$f1, shva$f2)
 ```
 
 ### 
 1.4 Calculate Pearson's correlation of `f1` and `f2` for each vowel
 ```{r 1.4}
-
+shva_A <- filter(shva, vowel == "A")
+shva_a <- filter(shva, vowel == "a")
+shva_y <- filter(shva, vowel == "y")
+cor.test(shva_A$f1, shva_A$f2)
+cor.test(shva_a$f1, shva_a$f2)
+cor.test(shva_y$f1, shva_y$f2)
 ```
 
 ## 2 Linear regressions
@@ -57,25 +76,30 @@ Calculate Pearson's correlation of `f1` and `f2` (all data)
 ### 2.1.1 
 Use the linear regression model to predict `f2` by `f1`.
 ```{r 2.1.1}
-
+predict <- lm(data = shva, f2 ~ f1)
+summary(predict)
 ```
 
 ### 2.1.2 
 Write down the equation for f2 using coefficients from the model (e.g. $y =  b + kx$)
 ```{r 2.1.2}
-
+f2 = 1639.70215 - 0.42875 * f1
 ```
 
 ### 2.1.3 
 Provide the adjusted R$^2$
 ```{r 2.1.3}
-
+summary(predict)$adj.r.squared
 ```
 
 ### 2.1.4 
 Add the regression line in the scatterplot 1.1.
 ```{r 2.1.4}
-
+shva %>%
+  ggplot(aes(f2, f1, colour = vowel)) +
+  geom_point() +
+  scale_x_reverse() + scale_y_reverse() +
+  geom_smooth(method='lm', formula= y~x, inherit.aes = FALSE, aes(f2, f1))
 ```
 
 ### 2.1.5 
@@ -83,32 +107,36 @@ Make a scatter plot for `f1` and `f2` grouped by vowels.
 Use `ggplot()` and `facet_wrap()`.
 
 ```{r 2.1.5}
-
+shva %>%
+  ggplot(aes(f2, f1)) + 
+  geom_point() +
+  facet_wrap(vars(shva$vowel))
 ```
 
 ### 2.2.1 
 Use the linear regression model to predict `f2` by `f1` and `vowel`.
 ```{r 2.2.1}
-
+predict2 <- lm(data = shva, f2 ~ f1 + vowel)
+summary(predict2)
 ```
 
 ### 2.2.2 
 What is the intercept of the model?
 ```{r 2.2.2}
-
+summary(predict2)$coefficients[1, 1]
 ```
 
 ### 2.2.3 
 Provide the adjusted R$^2$
 ```{r 2.2.3}
-
+summary(predict2)$adj.r.squared
 ```
 
 ### 2.2.4 
 Write down your general conclusions about the relationship between `f1`, `f2`, and `vowels`.
 
 ```
-
+Adjusted R**2 increases from 0.33 to 0.48 when we add one more variable (vowel). It is still less than half, so we can conclude that f1 and vowels slightly affect f2. 
 ```
 
 ## 3. Dutch causative constructions
@@ -143,20 +171,32 @@ summary(d_caus)
 
 ### 3.1 
 We are going to test whether the association between `Aux` and other categorical variables (`Aux` ~ `CrSem`, `Aux` ~ `CeSem`, etc) is statistically significant. The assiciation with which variable should be analysed using Fisher's Exact Test and not using Pearson's Chi-squared Test? Is this association statistically significant?
-```{r 3.1}
 
+```{r 3.1}
+chisq.test(d_caus$Aux, d_caus$CrSem)
+chisq.test(d_caus$Aux, d_caus$CeSem)
+chisq.test(d_caus$Aux, d_caus$CdEvSem)
+chisq.test(d_caus$Aux, d_caus$CeSynt)
+chisq.test(d_caus$Aux, d_caus$EPTrans)
+chisq.test(d_caus$Aux, d_caus$Country)
+chisq.test(d_caus$Aux, d_caus$Domain)
+fisher.test(d_caus$Aux, d_caus$CeSynt)
 ```
+If we try to perform Chi-squared Test with each pair, we will get the warning only for Aux and CeSynt. In the Fisher's Test for these variables p-value < 2.2e-16. It means that this association is statistically significant.
+
 
 ### 3.2. 
 Test the hypothesis that `Aux` and `EPTrans` are not independent with the help of Pearson's Chi-squared Test. 
 ```{r 3.2}
-
+Aux_EPT <- chisq.test(d_caus$Aux, d_caus$EPTrans)
+Aux_EPT 
 ```
+`Aux` and `EPTrans` are not independent (p-value<0.05, null Hypothesis - there are independent)
 
 ### 3.3 
 Provide expected frequencies for Pearson's Chi-squared Test of `Aux` and `EPTrans` variables.
 ```{r 3.3}
-
+Aux_EPT$expected
 ```
 
 ### 3.4. 
@@ -168,9 +208,14 @@ c & d
 \end{matrix}
 $$
 one can find *odds ratio* as $(a/c)/(b/d)$.
-
 ```{r 3.4}
+a = Aux_EPT$observed[1, 1]
+b = Aux_EPT$observed[1, 2]
+c = Aux_EPT$observed[2, 1]
+d = Aux_EPT$observed[2, 2]
 
+odds_ratio_obs = (a/c)/(b/d)
+odds_ratio_obs
 
 ```
 
@@ -178,42 +223,52 @@ one can find *odds ratio* as $(a/c)/(b/d)$.
 Find odds ratio for expected frequencies of `Aux` and `EPTrans`
 
 ```{r 3.4.1}
+a2 = Aux_EPT$expected[1, 1]
+b2 = Aux_EPT$expected[1, 2]
+c2 = Aux_EPT$expected[2, 1]
+d2 = Aux_EPT$expected[2, 2]
 
+odds_ratio_exp = (a2/c2)/(b2/d2)
+odds_ratio_exp
 ```
 What can you say about odds ratio of expected frequencies for arbitrary data?
+
+The odds ratio of expected frequencies is equal to 1, as we expect that these columns independent (null-hypothesis). In observed odd ratio we can see that transitivity affects the usage of the auxiliar verb 'doen'. It is 2.6 times more frequent with intransitive verbs than the verb 'laten'.
 
 ### 3.5 
 Calculate effect size for this test using Cramer's V (phi).
 ```{r 3.5}
-
+library(lsr)
+cramersV(Aux_EPT$observed)
 ```
 
 ### 3.6. 
 Report the results of independence test using the following template:
 ```
-We have / have not found a significant association between variables ... and ... (p < 0.001).  The odds of ... were ... times higher / lower in (group ....) than in (group ....). Effect size is large / medium / small (Cramer's V = ....).
+We have not found a significant association between variables Aux and EPTrans (p < 0.001).  The odds of 'doen' were 2.606162 times more frequent in Intr than in Tr. Effect size is small (Cramer's V = 0.1691587).
 ```
 
 ### 3.7 
 Visualize the distribution using mosaic plot.
 Use `mosaic()` function from `vcd` library.
 ```{r 3.7}
-
+library(vcd)
+mosaic(data=d_caus, ~ EPTrans + Aux, shade=TRUE, legend=TRUE)
 ```
 
 Below is an example of how to use mosaic() with three variables.
 ```{r 3.7.1}
-# mosaic(~ Aux + CrSem + Country, data=d_caus, shade=TRUE, legend=TRUE)
+mosaic(~ Aux + CrSem + Country, data=d_caus, shade=TRUE, legend=TRUE)
 ```
 
 ### 3.8 
 Why is it not recommended to run multiple Chisq tests of independence on different variables within your dataset whithout adjusting for the multiplicity? (i.e. just testing all the pairs of variables one by one)  
 ```
-
+In case of testing all the pairs separately, the probability of error may increase significantly, as for each test there is a separate probability of error and we will have to multiply them. 
 ```
-
+Using multiple logistic regression and classiﬁcation trees, the study explores the conceptual diﬀerences between the constructions
 ### 3.9 
 Provide a short text (300 words) describing the hypothesis of this study and the results of your analysis.
 ```{r 3.9}
-
-```
+In Dutch language there are two near-synonymous periphrastic causative verbs - 'doen' and 'laten', corresponding to English 'do' and 'let' accordingly. The hypothesis of this study is that there are conceptual differences between these constructions which determine their usage in different contexts. These differences can be observed by applying logistic regression and classiﬁcation trees to measure the impact of different factors. The dataset contains such variables as Aux, CrSem, CeSem, CdEvSem, CeSynt, EPTrans, Country, Domain. Using Fisher's Test, we have discovered that the syntactic status of the Causee may affects the usage of causative verbs. The Pearson's Chi-squared Test has also demonstrated that the verb 'doen' seems to occur more often with intrasitive verbs than 'laten'. But there is no any significant association between variables Aux and EPTrans. We can conclude that the hypothesis has been proven. These causative verbs occur in different contexts. The verb 'doen' is more likely to be used when an inanimate stimulus causes a cognizer to experience some mental state (an intransitive event). And the verb 'laten', on the contrary, seems to occur more often with animate stimulus and transitive effected predicate.
+``` 
